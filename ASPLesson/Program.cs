@@ -1,15 +1,29 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using ASPLesson.Abstraction;
+using ASPLesson.Data;
+using ASPLesson.Mapper;
+using ASPLesson.Repository;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(typeof(MapperProfile));
+builder.Services.AddMemoryCache(x => x.TrackStatistics = true);
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+builder.Host.ConfigureContainer<ContainerBuilder>(container =>
+{
+	container.RegisterType<ProductRepository>().As<IProductRepository>();
+	container.RegisterType<ProductGroupRepository>().As<IProductGroupRepository>();
+	container.RegisterType<StorageContext>().WithParameter("configuration", builder.Configuration).InstancePerDependency();
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
@@ -17,6 +31,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); 
 
 app.UseAuthorization();
 
